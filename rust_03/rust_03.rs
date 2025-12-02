@@ -53,7 +53,6 @@ fn mod_exp(base: u64, exp: u64, modulus: u64) -> u64 {
     result as u64
 }
 
-/// Generate random 64-bit number
 fn generate_random() -> u64 {
     use std::time::{SystemTime, UNIX_EPOCH};
     let nanos = SystemTime::now()
@@ -63,7 +62,6 @@ fn generate_random() -> u64 {
     ((nanos ^ (nanos >> 64)) & 0xFFFFFFFFFFFFFFFF) as u64
 }
 
-/// LCG-based keystream generator
 struct KeystreamGenerator {
     state: u64,
 }
@@ -92,24 +90,20 @@ impl KeystreamGenerator {
     }
 }
 
-/// Encrypt/Decrypt with XOR stream cipher
 fn xor_cipher(data: &[u8], keystream: &mut KeystreamGenerator) -> Vec<u8> {
     data.iter().map(|&b| b ^ keystream.next_byte()).collect()
 }
 
-/// Perform Diffie-Hellman key exchange
 fn diffie_hellman_exchange(stream: &mut TcpStream, is_server: bool) -> io::Result<u64> {
     println!("\n[DH] Starting key exchange...");
     println!("[DH] Using hardcoded DH parameters:");
     println!("p = {:016X} (64-bit prime - public)", P);
     println!("g = {} (generator - public)", G);
 
-    // Generate private key
     let private_key = generate_random();
     println!("\n[DH] Generating our keypair...");
     println!("private_key = {:016X} (random 64-bit)", private_key);
 
-    // Compute public key: g^private mod p
     let public_key = mod_exp(G, private_key, P);
     println!("public_key = g^private mod p");
     println!("= {}^{} mod p", G, private_key);
@@ -117,9 +111,7 @@ fn diffie_hellman_exchange(stream: &mut TcpStream, is_server: bool) -> io::Resul
 
     println!("\n[DH] Exchanging keys...");
 
-    // Exchange public keys
     let their_public = if is_server {
-        // Server: receive first, then send
         println!("[NETWORK] Receiving public key (8 bytes)...");
         let mut buf = [0u8; 8];
         stream.read_exact(&mut buf)?;
@@ -133,7 +125,6 @@ fn diffie_hellman_exchange(stream: &mut TcpStream, is_server: bool) -> io::Resul
 
         their_key
     } else {
-        // Client: send first, then receive
         println!("[NETWORK] Sending public key (8 bytes)...");
         stream.write_all(&public_key.to_be_bytes())?;
         stream.flush()?;
@@ -148,7 +139,6 @@ fn diffie_hellman_exchange(stream: &mut TcpStream, is_server: bool) -> io::Resul
         their_key
     };
 
-    // Compute shared secret: their_public^private mod p
     println!("\n[DH] Computing shared secret...");
     println!("Formula: secret = (their_public)^(our_private) mod p");
     println!();
@@ -156,13 +146,12 @@ fn diffie_hellman_exchange(stream: &mut TcpStream, is_server: bool) -> io::Resul
     println!("secret = ({:016X})^({:016X}) mod p", their_public, private_key);
     println!("= {:016X}", shared_secret);
 
-    // Verify both sides computed the same secret
     println!("\n[VERIFY] Both sides computed the same secret ✓");
 
     Ok(shared_secret)
 }
 
-/// Handle server mode
+
 fn run_server(port: u16) -> io::Result<()> {
     let listener = TcpListener::bind(format!("0.0.0.0:{}", port))?;
     println!("[SERVER] Listening on 0.0.0.0:{}", port);
@@ -171,11 +160,9 @@ fn run_server(port: u16) -> io::Result<()> {
     let (mut stream, addr) = listener.accept()?;
     println!("\n[CLIENT] Connected from {}", addr);
 
-    // DH key exchange
     let shared_secret = diffie_hellman_exchange(&mut stream, true)?;
     let mut keystream = KeystreamGenerator::new(shared_secret);
 
-    // Show keystream preview
     let preview = keystream.peek_bytes(20);
     print!("\nKeystream: ");
     for (i, &b) in preview.iter().enumerate() {
@@ -189,7 +176,6 @@ fn run_server(port: u16) -> io::Result<()> {
 
     println!("✓ Secure channel established!\n");
 
-    // Chat loop
     let mut reader = BufReader::new(stream.try_clone()?);
 
     loop {
@@ -249,16 +235,13 @@ fn run_server(port: u16) -> io::Result<()> {
     Ok(())
 }
 
-/// Handle client mode
 fn run_client(address: String) -> io::Result<()> {
     let mut stream = TcpStream::connect(&address)?;
     println!("[CLIENT] Connected to {}", address);
 
-    // DH key exchange
     let shared_secret = diffie_hellman_exchange(&mut stream, false)?;
     let mut keystream = KeystreamGenerator::new(shared_secret);
 
-    // Show keystream preview
     let preview = keystream.peek_bytes(20);
     print!("\nKeystream: ");
     for (i, &b) in preview.iter().enumerate() {
@@ -273,7 +256,6 @@ fn run_client(address: String) -> io::Result<()> {
     println!("✓ Secure channel established!\n");
     println!("[CHAT] Type message:");
 
-    // Chat loop
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         let message = line?;

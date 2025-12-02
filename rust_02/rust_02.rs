@@ -104,14 +104,12 @@ fn handle_write(args: &Args, hex_string: &str) -> Result<(), String> {
         write_len, args.offset
     );
 
-    // Afficher le hex formaté
     let hex_formatted: Vec<String> = bytes_to_write
         .iter()
         .map(|b| format!("{:02x}", b))
         .collect();
     println!("Hex: {}", hex_formatted.join(" "));
 
-    // Afficher l'ASCII
     let ascii: String = bytes_to_write.iter().map(|&b| format_ascii(b)).collect();
     println!("ASCII: {}", ascii);
 
