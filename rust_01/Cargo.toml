@@ -1,0 +1,11 @@
+[package]
+name = "rust_01"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "wordfreq"
+path = "rust_01.rs"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }

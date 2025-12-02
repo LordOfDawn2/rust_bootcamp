@@ -4,9 +4,9 @@ use std::io::{self, Read};
 
 /// Count word frequency in text
 #[derive(Parser, Debug)]
-#[command(author, version, about)]
+#[command(name = "wordfreq", author, about, long_about = None, disable_version_flag = true)]
 struct Args {
-    /// Text to analyze (optional, reads from stdin if not provided)
+    /// Text to analyze (or use stdin)
     text: Option<String>,
 
     /// Show top N words [default: 10]
@@ -25,7 +25,6 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    // Lire le texte depuis les arguments ou stdin
     let mut input = String::new();
     if let Some(ref text) = args.text {
         input = text.clone();
@@ -35,7 +34,6 @@ fn main() {
             .expect("Failed to read from stdin");
     }
 
-    // Extraire les mots
     let words = input
         .split_whitespace()
         .map(|w| {
@@ -49,39 +47,21 @@ fn main() {
         })
         .filter(|w| w.len() >= args.min_length && !w.is_empty());
 
-    // Compter les mots
     let mut freq: HashMap<String, usize> = HashMap::new();
     for word in words {
         *freq.entry(word).or_insert(0) += 1;
     }
 
-    // Trier par fréquence (descendante)
     let mut sorted: Vec<_> = freq.into_iter().collect();
     sorted.sort_by(|a, b| b.1.cmp(&a.1));
 
-    // Formatage du résultat
-    if args.text.is_none() {
-        println!("Top {} words:", args.top);
-    } else {
+    if args.text.is_some() {
         println!("Word frequency:");
+    } else {
+        println!("Top {} words:", args.top);
     }
 
     for (word, count) in sorted.into_iter().take(args.top) {
-        println!("{}: {}", word, format_number(count));
+        println!("{}: {}", word, count);
     }
-}
-
-fn format_number(n: usize) -> String {
-    let s = n.to_string();
-    let chars: Vec<char> = s.chars().rev().collect(); // <-- plus besoin de "mut"
-    let mut result = String::new();
-
-    for (i, c) in chars.iter().enumerate() {
-        if i > 0 && i % 3 == 0 {
-            result.push(',');
-        }
-        result.push(*c);
-    }
-
-    result.chars().rev().collect()
 }

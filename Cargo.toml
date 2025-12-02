@@ -7,4 +7,22 @@ edition = "2021"
 clap = { version = "4.5", features = ["derive"] }
 hex = "0.4"
 
-# Cargo.toml
+[[bin]]
+name = "rust_00"
+path = "rust_00/rust_00.rs"
+
+[[bin]]
+name = "rust_01"
+path = "rust_01/rust_01.rs"
+
+[[bin]]
+name = "rust_02"
+path = "rust_02/rust_02.rs"
+
+[[bin]]
+name = "rust_03"
+path = "rust_03/rust_03.rs"
+
+[[bin]]
+name = "rust_04"
+path = "rust_04/rust_04.rs"

@@ -1,0 +1,10 @@
+[package]
+name = "rust_04"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "rust_04"
+path = "rust_04.rs"
+
+[dependencies]

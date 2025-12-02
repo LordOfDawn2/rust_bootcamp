@@ -1,0 +1,11 @@
+[package]
+name = "rust_00"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "rust_00"
+path = "rust_00.rs"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
