@@ -4,6 +4,7 @@ target/
 # Binary files (test files, output files, etc.)
 *.bin
 *.exe
+*.txt
 
 # Debug files
 *.pdb
