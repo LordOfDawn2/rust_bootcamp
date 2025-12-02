@@ -201,7 +201,7 @@ fn visualize_map(grid: &[Vec<u8>], path: &[(usize, usize)], max_path: Option<&[(
     }
     
     // Display maximum path if present
-    if let Some(_) = max_path {
+    if max_path.is_some() {
         println!("\nMAXIMUM COST PATH (shown in RED):");
         println!("==========================================");
         println!();
@@ -288,25 +288,55 @@ fn dijkstra_min(
         }
         
         if y == height - 1 && x == width - 1 {
+            if animate {
+                let mut path = Vec::new();
+                let mut curr = Some(pos);
+                while let Some(p) = curr {
+                    path.push(p);
+                    curr = prev[p.0][p.1];
+                }
+                path.reverse();
+                println!("\nStep {}: Path found!", visited_order.len());
+                for (y_grid, row) in grid.iter().enumerate() {
+                    for (x_grid, _val) in row.iter().enumerate() {
+                        if path.iter().any(|&p| p == (y_grid, x_grid)) {
+                            print!("[\x1b[32m√\x1b[0m]");
+                        } else if visited_order.iter().any(|&p| p == (y_grid, x_grid)) {
+                            print!("[\x1b[33m*\x1b[0m]");
+                        } else {
+                            print!("[ ]");
+                        }
+                    }
+                    println!();
+                }
+            }
             break;
         }
         
-        let moves = [(0, 1), (1, 0), (0, -1isize as usize), (-1isize as usize, 0)];
-        for (dy, dx) in moves.iter() {
-            let ny = y.wrapping_add(*dy);
-            let nx = x.wrapping_add(*dx);
+        let mut neighbors = Vec::new();
+        if y > 0 {
+            neighbors.push((y - 1, x));
+        }
+        if y + 1 < height {
+            neighbors.push((y + 1, x));
+        }
+        if x > 0 {
+            neighbors.push((y, x - 1));
+        }
+        if x + 1 < width {
+            neighbors.push((y, x + 1));
+        }
+        
+        for &(ny, nx) in &neighbors {
+            let new_cost = cost + grid[ny][nx] as u32;
             
-            if ny < height && nx < width {
-                let new_cost = cost + grid[ny][nx] as u32;
-                
-                if new_cost < dist[ny][nx] {
-                    dist[ny][nx] = new_cost;
-                    prev[ny][nx] = Some((y, x));
-                    heap.push(State {
-                        cost: new_cost,
-                        pos: (ny, nx),
-                    });
-                }
+            if new_cost < dist[ny][nx] {
+                dist[ny][nx] = new_cost;
+                prev[ny][nx] = Some((y, x));
+                heap.push(State {
+                    cost: new_cost,
+                    pos: (ny, nx),
+                });
             }
         }
     }
@@ -327,6 +357,7 @@ fn dijkstra_max(grid: &[Vec<u8>]) -> (Vec<(usize, usize)>, u32) {
     let width = grid[0].len();
     let mut dist = vec![vec![0u32; width]; height];
     let mut prev = vec![vec![None; width]; height];
+    let mut visited = vec![vec![false; width]; height];
     let mut heap = BinaryHeap::new();
     
     dist[0][0] = grid[0][0] as u32;
@@ -338,30 +369,43 @@ fn dijkstra_max(grid: &[Vec<u8>]) -> (Vec<(usize, usize)>, u32) {
     while let Some(StateMax { cost, pos }) = heap.pop() {
         let (y, x) = pos;
         
-        if cost < dist[y][x] {
+        if visited[y][x] {
             continue;
         }
+        visited[y][x] = true;
         
         if y == height - 1 && x == width - 1 {
             break;
         }
         
-        let moves = [(0, 1), (1, 0), (0, -1isize as usize), (-1isize as usize, 0)];
-        for (dy, dx) in moves.iter() {
-            let ny = y.wrapping_add(*dy);
-            let nx = x.wrapping_add(*dx);
+        let mut neighbors = Vec::new();
+        if y > 0 {
+            neighbors.push((y - 1, x));
+        }
+        if y + 1 < height {
+            neighbors.push((y + 1, x));
+        }
+        if x > 0 {
+            neighbors.push((y, x - 1));
+        }
+        if x + 1 < width {
+            neighbors.push((y, x + 1));
+        }
+        
+        for &(ny, nx) in &neighbors {
+            if visited[ny][nx] {
+                continue;
+            }
             
-            if ny < height && nx < width {
-                let new_cost = cost + grid[ny][nx] as u32;
-                
-                if new_cost > dist[ny][nx] {
-                    dist[ny][nx] = new_cost;
-                    prev[ny][nx] = Some((y, x));
-                    heap.push(StateMax {
-                        cost: new_cost,
-                        pos: (ny, nx),
-                    });
-                }
+            let new_cost = cost + grid[ny][nx] as u32;
+            
+            if new_cost > dist[ny][nx] {
+                dist[ny][nx] = new_cost;
+                prev[ny][nx] = Some((y, x));
+                heap.push(StateMax {
+                    cost: new_cost,
+                    pos: (ny, nx),
+                });
             }
         }
     }
@@ -380,8 +424,9 @@ fn dijkstra_max(grid: &[Vec<u8>]) -> (Vec<(usize, usize)>, u32) {
 fn main() -> Result<(), String> {
     let args = Args::parse();
     
-    let grid = if let Some(gen_size) = args.generate {
-        println!("Generating {}x{} hexadecimal grid...", gen_size.split('x').next().unwrap(), gen_size.split('x').nth(1).unwrap());
+    let grid = if let Some(ref gen_size) = args.generate {
+        let parts: Vec<&str> = gen_size.split('x').collect();
+        println!("Generating {}x{} hexadecimal grid...", parts[0], parts[1]);
         println!();
         let grid = generate_map(&gen_size)?;
         
@@ -414,7 +459,7 @@ fn main() -> Result<(), String> {
         println!("Finding optimal paths...");
     }
     
-    let (min_path, min_cost, visited) = dijkstra_min(&grid, args.animate);
+    let (min_path, min_cost, _visited) = dijkstra_min(&grid, args.animate);
     
     if !args.animate {
         println!();
@@ -435,7 +480,7 @@ fn main() -> Result<(), String> {
         println!();
     }
     
-    let max_result = if args.both {
+    if args.both {
         let (max_path, max_cost) = dijkstra_max(&grid);
         if args.visualize {
             visualize_map(&grid, &min_path, Some(&max_path));
@@ -452,10 +497,7 @@ fn main() -> Result<(), String> {
             }
             println!();
         }
-        Some(max_path)
-    } else {
-        None
-    };
+    }
     
     if args.animate {
         println!();
