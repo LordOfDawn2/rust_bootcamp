@@ -10,15 +10,15 @@ struct Args {
     text: Option<String>,
 
     /// Show top N words [default: 10]
-    #[arg(long, default_value_t = 10)]
+    #[arg(short = 'n', long, default_value_t = 10)]
     top: usize,
 
     /// Ignore words shorter than N [default: 1]
-    #[arg(long, default_value_t = 1)]
+    #[arg(short = 'm', long, default_value_t = 1)]
     min_length: usize,
 
     /// Case insensitive counting
-    #[arg(long)]
+    #[arg(short = 'i', long, default_value_t = true)]
     ignore_case: bool,
 }
 
@@ -37,9 +37,7 @@ fn main() {
     let words = input
         .split_whitespace()
         .map(|w| {
-            let mut word = w
-                .trim_matches(|c: char| !c.is_alphanumeric())
-                .to_string();
+            let mut word = w.trim_matches(|c: char| !c.is_alphanumeric()).to_string();
             if args.ignore_case {
                 word = word.to_lowercase();
             }
@@ -54,12 +52,6 @@ fn main() {
 
     let mut sorted: Vec<_> = freq.into_iter().collect();
     sorted.sort_by(|a, b| b.1.cmp(&a.1));
-
-    if args.text.is_some() {
-        println!("Word frequency:");
-    } else {
-        println!("Top {} words:", args.top);
-    }
 
     for (word, count) in sorted.into_iter().take(args.top) {
         println!("{}: {}", word, count);

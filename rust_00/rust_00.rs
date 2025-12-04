@@ -8,11 +8,11 @@ struct Args {
     name: String,
 
     /// Convert to uppercase
-    #[arg(long)]
+    #[arg(short, long)]
     upper: bool,
 
     /// Repeat Greating N times
-    #[arg(long, default_value_t = 1)]
+    #[arg(short, long, default_value_t = 1)]
     repeat: u8,
 }
 
