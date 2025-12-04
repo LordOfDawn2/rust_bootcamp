@@ -83,7 +83,8 @@ impl KeystreamGenerator {
         let mut temp_state = self.state;
         let mut bytes = Vec::new();
         for _ in 0..count {
-            temp_state = ((temp_state as u128 * LCG_A as u128 + LCG_C as u128) % LCG_M as u128) as u64;
+            temp_state =
+                ((temp_state as u128 * LCG_A as u128 + LCG_C as u128) % LCG_M as u128) as u64;
             bytes.push((temp_state & 0xFF) as u8);
         }
         bytes
@@ -143,7 +144,10 @@ fn diffie_hellman_exchange(stream: &mut TcpStream, is_server: bool) -> io::Resul
     println!("Formula: secret = (their_public)^(our_private) mod p");
     println!();
     let shared_secret = mod_exp(their_public, private_key, P);
-    println!("secret = ({:016X})^({:016X}) mod p", their_public, private_key);
+    println!(
+        "secret = ({:016X})^({:016X}) mod p",
+        their_public, private_key
+    );
     println!("= {:016X}", shared_secret);
 
     println!("\n[VERIFY] Both sides computed the same secret ✓");
@@ -151,10 +155,14 @@ fn diffie_hellman_exchange(stream: &mut TcpStream, is_server: bool) -> io::Resul
     Ok(shared_secret)
 }
 
-
 fn run_server(port: u16) -> io::Result<()> {
     let listener = TcpListener::bind(format!("0.0.0.0:{}", port))?;
     println!("[SERVER] Listening on 0.0.0.0:{}", port);
+    println!();
+    println!("[DH] Diffie-Hellman Parameters:");
+    println!("p = {:016X}", P);
+    println!("g = {}", G);
+    println!();
     println!("[SERVER] Waiting for client...");
 
     let (mut stream, addr) = listener.accept()?;
@@ -188,7 +196,10 @@ fn run_server(port: u16) -> io::Result<()> {
         if !line.trim().is_empty() {
             let encrypted = hex::decode(line.trim()).unwrap_or_default();
             if !encrypted.is_empty() {
-                println!("\n[NETWORK] Received encrypted message ({} bytes)", encrypted.len());
+                println!(
+                    "\n[NETWORK] Received encrypted message ({} bytes)",
+                    encrypted.len()
+                );
                 println!("[-] Received {} bytes", encrypted.len());
 
                 println!("\n[DECRYPT]");
@@ -199,16 +210,20 @@ fn run_server(port: u16) -> io::Result<()> {
                 println!();
 
                 let position = (keystream.state as usize) % (LCG_M as usize);
-                let key_bytes: Vec<u8> = encrypted.iter().take(3).enumerate()
+                let key_bytes: Vec<u8> = encrypted
+                    .iter()
+                    .take(3)
+                    .enumerate()
                     .map(|(i, _)| {
                         let mut temp = keystream.state;
                         for _ in 0..i {
-                            temp = ((temp as u128 * LCG_A as u128 + LCG_C as u128) % LCG_M as u128) as u64;
+                            temp = ((temp as u128 * LCG_A as u128 + LCG_C as u128) % LCG_M as u128)
+                                as u64;
                         }
                         (temp & 0xFF) as u8
                     })
                     .collect();
-                
+
                 print!("Key: ");
                 for (i, &b) in key_bytes.iter().enumerate() {
                     print!("{:02x} ", b);
@@ -226,7 +241,10 @@ fn run_server(port: u16) -> io::Result<()> {
                 }
                 println!("→ {:?}", message);
 
-                println!("\n[TEST] Round-trip verified: {:?} → encrypt → decrypt → {:?} ✓", message, message);
+                println!(
+                    "\n[TEST] Round-trip verified: {:?} → encrypt → decrypt → {:?} ✓",
+                    message, message
+                );
                 println!("\n[CLIENT] {}", message);
             }
         }
@@ -301,7 +319,10 @@ fn run_client(address: String) -> io::Result<()> {
         println!();
 
         let hex_message = hex::encode(&encrypted);
-        println!("\n[NETWORK] Sending encrypted message ({} bytes)...", encrypted.len());
+        println!(
+            "\n[NETWORK] Sending encrypted message ({} bytes)...",
+            encrypted.len()
+        );
         stream.write_all(hex_message.as_bytes())?;
         stream.write_all(b"\n")?;
         stream.flush()?;
