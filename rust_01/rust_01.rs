@@ -37,7 +37,7 @@ fn main() {
     let words = input
         .split_whitespace()
         .map(|w| {
-            let mut word = w.trim_matches(|c: char| !c.is_alphanumeric()).to_string();
+            let mut word = w.trim_matches(|c: char| !c.is_alphanumeric() && c != '\'' && c != '"').to_string();
             if args.ignore_case {
                 word = word.to_lowercase();
             }
